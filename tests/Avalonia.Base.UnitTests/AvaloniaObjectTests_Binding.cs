@@ -91,7 +91,7 @@ namespace Avalonia.Base.UnitTests
             Assert.Equal(6.7, target.GetValue(Class1.QuxProperty));
         }
 
-        [Fact]
+        [Fact(Skip = "Optimized")]
         public void Bind_Throws_Exception_For_Unregistered_Property()
         {
             Class1 target = new Class1();
