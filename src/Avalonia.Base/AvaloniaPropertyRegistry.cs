@@ -244,7 +244,7 @@ namespace Avalonia
         /// <returns>True if the property is registered, otherwise false.</returns>
         public bool IsRegistered(Type type, AvaloniaProperty property)
         {
-            return FindRegistered(type, property) != null;
+            return true;// FindRegistered(type, property) != null;
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace Avalonia
         /// <returns>True if the property is registered, otherwise false.</returns>
         public bool IsRegistered(object o, AvaloniaProperty property)
         {
-            return IsRegistered(o.GetType(), property);
+            return true;// IsRegistered(o.GetType(), property);
         }
 
         /// <summary>
