@@ -55,6 +55,11 @@ namespace Avalonia.Utilities
                 {
                     sub.Remove(subscriber);
                 }
+
+                //if (dic.Count == 0)
+                //{
+                //    SubscriptionTypeStorage<T>.Subscribers.Remove(target);
+                //}
             }
         }
 
@@ -140,10 +145,13 @@ namespace Avalonia.Utilities
                     var reference = _data[c];
                     IWeakSubscriber<T> instance;
 
-                    if (reference != null && reference.TryGetTarget(out instance) && instance == s)
+                    if (reference != null)
                     {
-                        _data[c] = null;
-                        removed = true;
+                        if (!reference.TryGetTarget(out instance) || instance == s)
+                        {
+                            _data[c] = null;
+                            removed = true;
+                        }
                     }
                 }
 
