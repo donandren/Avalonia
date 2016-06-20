@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Logging;
 using Avalonia.Threading;
+using System.Reactive;
+using System.Reactive.Subjects;
+using System.Reactive.Linq;
 
 namespace Avalonia.Layout
 {
@@ -166,11 +169,31 @@ namespace Avalonia.Layout
             _toArrange.Remove(control);
         }
 
+        Subject<Unit> _layoutQueue;
         private void QueueLayoutPass()
         {
+            //if (!_queued)
+            //{
+
+            //    Dispatcher.UIThread.InvokeAsync(ExecuteLayoutPass, DispatcherPriority.Render);
+            //    _queued = true;
+            //}
+
             if (!_queued)
             {
-                Dispatcher.UIThread.InvokeAsync(ExecuteLayoutPass, DispatcherPriority.Render);
+                if (_layoutQueue == null)
+                {
+                    _layoutQueue = new Subject<Unit>();
+                    _layoutQueue
+                        .Throttle(TimeSpan.FromMilliseconds(1))
+                        .Subscribe(_ =>
+                        {
+                            Dispatcher.UIThread.InvokeAsync(ExecuteLayoutPass, DispatcherPriority.Render);
+                        });
+                }
+
+                _layoutQueue.OnNext(Unit.Default);
+                //Dispatcher.UIThread.InvokeAsync(ExecuteLayoutPass, DispatcherPriority.Render);
                 _queued = true;
             }
         }
