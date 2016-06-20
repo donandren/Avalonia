@@ -245,6 +245,8 @@ namespace Avalonia.Controls.Presenters
             var generator = Owner.ItemContainerGenerator;
             var panel = VirtualizingPanel;
 
+            if (panel.IsAttachedToLogicalTree == false) return;
+
             if (!panel.IsFull && Items != null)
             {
                 var memberSelector = Owner.MemberSelector;
@@ -350,6 +352,10 @@ namespace Avalonia.Controls.Presenters
         {
             var panel = VirtualizingPanel;
             var generator = Owner.ItemContainerGenerator;
+
+            //no recycling can be done as something is invalid
+            if (!panel.IsAttachedToLogicalTree || !generator.Containers.Any()) return;
+
             var selector = Owner.MemberSelector;
             var sign = delta < 0 ? -1 : 1;
             var count = Math.Min(Math.Abs(delta), panel.Children.Count);
