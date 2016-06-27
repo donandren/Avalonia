@@ -1,11 +1,12 @@
 // Copyright (c) The Avalonia Project. All rights reserved.
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
+using Avalonia.Logging;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.Logging;
-using Avalonia.Threading;
 
 namespace Avalonia.Layout
 {
@@ -14,6 +15,14 @@ namespace Avalonia.Layout
     /// </summary>
     public class LayoutManager : ILayoutManager
     {
+        private const int MaxCountOfProcessedControlsInLayoutPass = 100;
+        private const int MaxControlLayoutCyclesCount = 10;
+
+        private int _currentMeasuredPasses = 0;
+        private int _currentArrangedPasses = 0;
+        private readonly Dictionary<ILayoutable, int> _currentMeasured = new Dictionary<ILayoutable, int>();
+        private readonly Dictionary<ILayoutable, int> _currentArranged = new Dictionary<ILayoutable, int>();
+
         private readonly HashSet<ILayoutable> _toMeasure = new HashSet<ILayoutable>();
         private readonly HashSet<ILayoutable> _toArrange = new HashSet<ILayoutable>();
         private bool _queued;
@@ -30,8 +39,15 @@ namespace Avalonia.Layout
             Contract.Requires<ArgumentNullException>(control != null);
             Dispatcher.UIThread.VerifyAccess();
 
+            if (GetCount(control, _currentMeasured) >= MaxControlLayoutCyclesCount)
+            {
+                //TODO: a possible layout cycle what to do, just log it and leave it????
+                return;
+            }
+
             _toMeasure.Add(control);
             _toArrange.Add(control);
+
             QueueLayoutPass();
         }
 
@@ -41,7 +57,14 @@ namespace Avalonia.Layout
             Contract.Requires<ArgumentNullException>(control != null);
             Dispatcher.UIThread.VerifyAccess();
 
+            if (GetCount(control, _currentArranged) >= MaxControlLayoutCyclesCount)
+            {
+                //TODO: a possible layout cycle what to do, just log it and leave it????
+                return;
+            }
+
             _toArrange.Add(control);
+
             QueueLayoutPass();
         }
 
@@ -73,6 +96,8 @@ namespace Avalonia.Layout
                         ExecuteMeasurePass();
                         ExecuteArrangePass();
 
+                        if (BreakArrange() || BreakMeasure()) break;
+
                         if (_toMeasure.Count == 0)
                         {
                             break;
@@ -85,10 +110,22 @@ namespace Avalonia.Layout
                 }
 
                 stopwatch.Stop();
-                Logger.Information(LogArea.Layout, this, "Layout pass finised in {Time}", stopwatch.Elapsed);
+                Logger.Information(LogArea.Layout, this,
+                    "Layout pass finised in {Time}, Measured {Measured}, Arranged {Arranged}",
+                    stopwatch.Elapsed, _currentMeasuredPasses, _currentArrangedPasses);
+
+                _currentArrangedPasses = 0;
+                _currentMeasuredPasses = 0;
+                _currentMeasured.Clear();
+                _currentArranged.Clear();
             }
 
             _queued = false;
+
+            if (_toMeasure.Count > 0 || _toArrange.Count > 0)
+            {
+                QueueLayoutPass();
+            }
         }
 
         /// <inheritdoc/>
@@ -98,7 +135,7 @@ namespace Avalonia.Layout
             Arrange(root);
 
             // Running the initial layout pass may have caused some control to be invalidated
-            // so run a full layout pass now (this usually due to scrollbars; its not known 
+            // so run a full layout pass now (this usually due to scrollbars; its not known
             // whether they will need to be shown until the layout pass has run and if the
             // first guess was incorrect the layout will need to be updated).
             ExecuteLayoutPass();
@@ -110,6 +147,9 @@ namespace Avalonia.Layout
             {
                 var next = _toMeasure.First();
                 Measure(next);
+
+                ++_currentMeasuredPasses;
+                if (BreakMeasure()) break;
             }
         }
 
@@ -119,6 +159,9 @@ namespace Avalonia.Layout
             {
                 var next = _toArrange.First();
                 Arrange(next);
+
+                ++_currentArrangedPasses;
+                if (BreakArrange()) break;
             }
         }
 
@@ -131,7 +174,7 @@ namespace Avalonia.Layout
             {
                 root.Measure(root.MaxClientSize);
             }
-            else if (parent != null)
+            else if (parent != null && !parent.IsMeasureValid)
             {
                 Measure(parent);
             }
@@ -139,6 +182,7 @@ namespace Avalonia.Layout
             if (!control.IsMeasureValid)
             {
                 control.Measure(control.PreviousMeasure.Value);
+                IncrementCount(control, _currentMeasured);
             }
 
             _toMeasure.Remove(control);
@@ -153,7 +197,7 @@ namespace Avalonia.Layout
             {
                 root.Arrange(new Rect(root.DesiredSize));
             }
-            else if (parent != null)
+            else if (parent != null && !parent.IsArrangeValid)
             {
                 Arrange(parent);
             }
@@ -161,9 +205,27 @@ namespace Avalonia.Layout
             if (control.PreviousArrange.HasValue)
             {
                 control.Arrange(control.PreviousArrange.Value);
+                IncrementCount(control, _currentArranged);
             }
 
             _toArrange.Remove(control);
+        }
+
+        private bool BreakMeasure() => _currentMeasuredPasses > MaxCountOfProcessedControlsInLayoutPass;
+
+        private bool BreakArrange() => _currentArrangedPasses > MaxCountOfProcessedControlsInLayoutPass;
+
+        private static void IncrementCount(ILayoutable control, Dictionary<ILayoutable, int> dict)
+        {
+            int cnt;
+            dict.TryGetValue(control, out cnt);
+            dict[control] = ++cnt;
+        }
+
+        private static int GetCount(ILayoutable control, Dictionary<ILayoutable, int> dict)
+        {
+            int cnt;
+            return dict.TryGetValue(control, out cnt) ? cnt : -1;
         }
 
         private void QueueLayoutPass()
