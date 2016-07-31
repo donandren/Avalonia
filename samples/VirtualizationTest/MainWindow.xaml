@@ -34,7 +34,7 @@
         <ListBox Name="listBox" 
                  Items="{Binding Items}" 
                  SelectedItems="{Binding SelectedItems}"
-                 SelectionMode="Multiple"
+                 SelectionMode="Single"
                  VirtualizationMode="{Binding VirtualizationMode}">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>

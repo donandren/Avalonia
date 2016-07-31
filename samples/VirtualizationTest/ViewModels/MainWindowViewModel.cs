@@ -12,13 +12,14 @@ namespace VirtualizationTest.ViewModels
 {
     internal class MainWindowViewModel : ReactiveObject
     {
-        private int _itemCount = 200;
+        private int _addremoveCount = 3;
+        private int _itemCount = 20;
         private string _newItemString = "New Item";
         private int _newItemIndex;
         private IReactiveList<ItemViewModel> _items;
         private string _prefix = "Item";
         private Orientation _orientation;
-        private ItemVirtualizationMode _virtualizationMode = ItemVirtualizationMode.Simple;
+        private ItemVirtualizationMode _virtualizationMode = ItemVirtualizationMode.None;
 
         public MainWindowViewModel()
         {
@@ -106,21 +107,26 @@ namespace VirtualizationTest.ViewModels
 
         private void AddItem()
         {
-            var index = Items.Count;
+            var index = 0;// Items.Count;
 
             if (SelectedItems.Count > 0)
             {
                 index = Items.IndexOf(SelectedItems[0]);
             }
 
-            Items.Insert(index, new ItemViewModel(_newItemIndex++, NewItemString));
+            //Items.Insert(index, new ItemViewModel(_newItemIndex++, NewItemString));
+            Items.InsertRange(index + 1,
+                     Enumerable.Range(0, _addremoveCount).Select(i => new ItemViewModel(_newItemIndex++, NewItemString)));
+
         }
 
         private void Remove()
         {
             if (SelectedItems.Count > 0)
             {
-                Items.RemoveAll(SelectedItems);
+                //Items.RemoveAll(SelectedItems);
+                int index = Items.IndexOf(SelectedItems[0]) + 1;
+                Items.RemoveRange(index, _addremoveCount);
             }
         }
 
