@@ -8,6 +8,8 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Utils;
 using Avalonia.Input;
 using Avalonia.VisualTree;
+using System.Linq;
+using Avalonia.Layout;
 
 namespace Avalonia.Controls.Presenters
 {
@@ -87,12 +89,21 @@ namespace Avalonia.Controls.Presenters
         /// <summary>
         /// Gets the <see cref="ExtentValue"/> as a <see cref="Size"/>.
         /// </summary>
-        public Size Extent => Vertical ? new Size(0, ExtentValue) : new Size(ExtentValue, 0);
+        public Size Extent => Vertical ?
+            new Size(VirtualizingPanel.DesiredSize.Width, ExtentValue) :
+            new Size(ExtentValue, VirtualizingPanel.DesiredSize.Height);
+
+        //TODO: find a better way instead this hack to get the physical ViewPort
+        private Size OriginalViewport => ((Owner as IVisual).VisualParent as ILayoutable).DesiredSize;
 
         /// <summary>
         /// Gets the <see cref="ViewportValue"/> as a <see cref="Size"/>.
         /// </summary>
-        public Size Viewport => Vertical ? new Size(0, ViewportValue) : new Size(ViewportValue, 0);
+        public Size Viewport => Vertical ?
+            new Size(OriginalViewport.Width, ViewportValue) :
+            new Size(ViewportValue, OriginalViewport.Height);
+
+        private Vector _offset;
 
         /// <summary>
         /// Gets or sets the <see cref="OffsetValue"/> as a <see cref="Vector"/>.
@@ -101,15 +112,17 @@ namespace Avalonia.Controls.Presenters
         {
             get
             {
-                return Vertical ? new Vector(0, OffsetValue) : new Vector(OffsetValue, 0);
+                // return Vertical ? new Vector(0, OffsetValue) : new Vector(OffsetValue, 0);
+                return Vertical ? _offset.WithY(OffsetValue) : _offset.WithX(OffsetValue);
             }
 
             set
             {
+                _offset = value;
                 OffsetValue = Vertical ? value.Y : value.X;
             }
         }
-        
+
         /// <summary>
         /// Creates an <see cref="ItemVirtualizer"/> based on an item presenter's 
         /// <see cref="ItemVirtualizationMode"/>.

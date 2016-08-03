@@ -187,6 +187,19 @@ namespace Avalonia.Controls.Presenters
                         measureSize = measureSize.WithWidth(availableSize.Width);
                     }
                 }
+                else
+                {
+                    var lstype = IsLogicalScrollVertical();
+
+                    if (lstype == true)
+                    {
+                        measureSize = new Size(double.PositiveInfinity, availableSize.Height);
+                    }
+                    else if (lstype == false)
+                    {
+                        measureSize = new Size(availableSize.Width, double.PositiveInfinity);
+                    }
+                }
 
                 child.Measure(measureSize);
                 var size = child.DesiredSize;
@@ -221,11 +234,48 @@ namespace Avalonia.Controls.Presenters
             }
             else if (child != null)
             {
-                child.Arrange(new Rect(finalSize));
+                var v = IsLogicalScrollVertical();
+
+                if (v == null)
+                {
+                    child.Arrange(new Rect(finalSize));
+                }
+                else
+                {
+                    Vector offset = Offset;
+
+                    var size = new Size(
+                        Math.Max(finalSize.Width, child.DesiredSize.Width),
+                        Math.Max(finalSize.Height, child.DesiredSize.Height));
+
+                    if (v == true)
+                    {
+                        offset = offset.WithY(0);
+                        size = size.WithHeight(finalSize.Height);
+                    }
+                    else
+                    {
+                        offset = offset.WithX(0);
+                        size = size.WithWidth(finalSize.Width);
+                    }
+
+                    //arrange only with the physical offset and stripped out logical
+                    child.Arrange(new Rect((Point)(-offset), size));
+                }
+
                 return finalSize;
             }
 
             return new Size();
+        }
+
+        private bool? IsLogicalScrollVertical()
+        {
+            var panel = (Child as IItemsPresenter)?.Panel as IVirtualizingPanel;
+
+            if (panel == null) return null;
+
+            return panel.ScrollDirection == Orientation.Vertical;
         }
 
         /// <inheritdoc/>
