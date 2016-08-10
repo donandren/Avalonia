@@ -72,8 +72,13 @@ namespace Avalonia.Controls.Generators
 
             for (int i = startingIndex; i < startingIndex + count; ++i)
             {
-                result.Add(_containers[i]);
-                _containers.Remove(i);
+                ItemContainerInfo container;
+
+                if (_containers.TryGetValue(i, out container))
+                {
+                    result.Add(container);
+                    _containers.Remove(i);
+                }
             }
 
             Dematerialized?.Invoke(this, new ItemContainerEventArgs(startingIndex, result));
