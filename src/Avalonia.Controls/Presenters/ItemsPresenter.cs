@@ -101,9 +101,9 @@ namespace Avalonia.Controls.Presenters
             {
                 var window = VisualRoot as Window;
 
-                if (window != null)
+                if (window != null && Panel is IVirtualizingPanel)
                 {
-                    availableSize = window.PlatformImpl.MaxClientSize;
+                    availableSize = window.Bounds.Size;
                 }
             }
 
