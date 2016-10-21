@@ -18,7 +18,7 @@ using Avalonia.Win32.Interop;
 
 namespace Avalonia.Win32
 {
-    class WindowImpl : IWindowImpl
+    public class WindowImpl : IWindowImpl
     {
         private static readonly List<WindowImpl> s_instances = new List<WindowImpl>();
 
