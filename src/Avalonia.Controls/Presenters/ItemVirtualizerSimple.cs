@@ -258,6 +258,12 @@ namespace Avalonia.Controls.Presenters
                 var index = NextIndex;
                 var step = 1;
 
+                if (NextIndex > 0 && (NextIndex > ItemCount || FirstIndex >= ItemCount))
+                {
+                    //something changed the collection count probably so let's reset
+                    NextIndex = FirstIndex = index = 0;
+                }
+
                 while (!panel.IsFull && index >= 0)
                 {
                     if (index >= ItemCount)
