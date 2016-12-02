@@ -338,7 +338,7 @@ namespace Avalonia.Controls.Presenters
 
                     if (!object.Equals(container.Item, item))
                     {
-                        if (!generator.TryRecycle(itemIndex, itemIndex, item, selector))
+                        if (!generator.TryRecycle(container.Index, itemIndex, item, selector))
                         {
                             throw new NotImplementedException();
                         }
