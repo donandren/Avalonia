@@ -331,8 +331,8 @@ namespace Avalonia.Controls.Presenters
                 var selector = Owner.MemberSelector;
                 var containers = generator.Containers.ToList();
                 var itemIndex = FirstIndex;
-
-                foreach (var container in containers)
+                foreach (var container in containers.OrderBy(c => c.Index))
+                //foreach (var container in containers)
                 {
                     var item = Items.ElementAt(itemIndex);
 

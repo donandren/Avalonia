@@ -225,6 +225,7 @@ namespace Avalonia.Controls.Generators
             container.Item = item;
             _containers.Remove(oldIndex);
             _containers.Add(newIndex, container);
+            //_containers[newIndex] = container;
             return container;
         }
 
