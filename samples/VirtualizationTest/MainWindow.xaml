@@ -43,7 +43,10 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate>
+                  <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Header}"/>
+                    <DropDown Items="{Binding Items}" />
+                  </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

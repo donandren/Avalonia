@@ -12,8 +12,8 @@ namespace VirtualizationTest.ViewModels
 {
     internal class MainWindowViewModel : ReactiveObject
     {
-        private int _addremoveCount = 3;
-        private int _itemCount = 20;
+        private int _addremoveCount = 1;
+        private int _itemCount = 1;
         private string _newItemString = "New Item";
         private int _newItemIndex;
         private IReactiveList<ItemViewModel> _items;
@@ -52,7 +52,7 @@ namespace VirtualizationTest.ViewModels
             set { this.RaiseAndSetIfChanged(ref _itemCount, value); }
         }
 
-        public AvaloniaList<ItemViewModel> SelectedItems { get; } 
+        public AvaloniaList<ItemViewModel> SelectedItems { get; }
             = new AvaloniaList<ItemViewModel>();
 
         public IReactiveList<ItemViewModel> Items
@@ -76,7 +76,7 @@ namespace VirtualizationTest.ViewModels
             set { this.RaiseAndSetIfChanged(ref _virtualizationMode, value); }
         }
 
-        public IEnumerable<ItemVirtualizationMode> VirtualizationModes => 
+        public IEnumerable<ItemVirtualizationMode> VirtualizationModes =>
             Enum.GetValues(typeof(ItemVirtualizationMode)).Cast<ItemVirtualizationMode>();
 
         public ReactiveCommand<object> AddItemCommand { get; private set; }
@@ -117,7 +117,6 @@ namespace VirtualizationTest.ViewModels
             //Items.Insert(index, new ItemViewModel(_newItemIndex++, NewItemString));
             Items.InsertRange(index + 1,
                      Enumerable.Range(0, _addremoveCount).Select(i => new ItemViewModel(_newItemIndex++, NewItemString)));
-
         }
 
         private void Remove()
@@ -128,6 +127,12 @@ namespace VirtualizationTest.ViewModels
                 int index = Items.IndexOf(SelectedItems[0]) + 1;
                 Items.RemoveRange(index, _addremoveCount);
             }
+
+            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                GC.Collect();
+                GC.WaitForFullGCComplete();
+            });
         }
 
         private void Recreate()
