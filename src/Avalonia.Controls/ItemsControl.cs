@@ -1,6 +1,7 @@
 // Copyright (c) The Avalonia Project. All rights reserved.
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -319,12 +320,13 @@ namespace Avalonia.Controls
         /// <param name="e">The event args.</param>
         protected virtual void ItemsChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var incc = e.OldValue as INotifyCollectionChanged;
+            UnsubscribeFromItems();
+            //var incc = e.OldValue as INotifyCollectionChanged;
 
-            if (incc != null)
-            {
-                incc.CollectionChanged -= ItemsCollectionChanged;
-            }
+            //if (incc != null)
+            //{
+            //    incc.CollectionChanged -= ItemsCollectionChanged;
+            //}
 
             var oldValue = e.OldValue as IEnumerable;
             var newValue = e.NewValue as IEnumerable;
@@ -413,12 +415,13 @@ namespace Avalonia.Controls
         {
             PseudoClasses.Set(":empty", items == null || items.Count() == 0);
 
-            var incc = items as INotifyCollectionChanged;
+            _collChanged = items.SubscribeForCollectionChangesSafe(ItemsCollectionChanged);
+            //var incc = items as INotifyCollectionChanged;
 
-            if (incc != null)
-            {
-                incc.CollectionChanged += ItemsCollectionChanged;
-            }
+            //if (incc != null)
+            //{
+            //    incc.CollectionChanged += ItemsCollectionChanged;
+            //}
         }
 
         /// <summary>
@@ -432,6 +435,29 @@ namespace Avalonia.Controls
                 _itemContainerGenerator.ItemTemplate = (IDataTemplate)e.NewValue;
                 // TODO: Rebuild the item containers.
             }
+        }
+
+        protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromLogicalTree(e);
+
+            //make sure subscribers are removed
+            //otherwise we have memory leaks
+            UnsubscribeFromItems();
+        }
+
+        private IDisposable _collChanged;
+
+        private void UnsubscribeFromItems()
+        {
+            _collChanged?.Dispose();
+            _collChanged = null;
+            //var incc = items as INotifyCollectionChanged;
+
+            //if (incc != null)
+            //{
+            //    incc.CollectionChanged -= ItemsCollectionChanged;
+            //}
         }
     }
 }

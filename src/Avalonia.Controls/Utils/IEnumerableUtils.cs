@@ -3,8 +3,11 @@
 
 using System;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 
 namespace Avalonia.Controls.Utils
 {
@@ -78,6 +81,23 @@ namespace Avalonia.Controls.Utils
             {
                 return Enumerable.ElementAt(items.Cast<object>(), index);
             }
+        }
+
+        public static IDisposable SubscribeForCollectionChangesSafe(this IEnumerable items,
+                                                Action<object, NotifyCollectionChangedEventArgs> callback)
+        {
+            var incc = items as INotifyCollectionChanged;
+
+            if (incc != null)
+            {
+                return Observable.FromEventPattern<NotifyCollectionChangedEventHandler,
+                                                    NotifyCollectionChangedEventArgs>(
+                                                        add => incc.CollectionChanged += add,
+                                                        remove => incc.CollectionChanged -= remove)
+                                                    .Subscribe(v => callback(v.Sender, v.EventArgs));
+            }
+
+            return Disposable.Empty;
         }
     }
 }
