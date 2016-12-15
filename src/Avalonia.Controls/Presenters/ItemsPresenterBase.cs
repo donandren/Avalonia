@@ -6,6 +6,8 @@ using System.Collections;
 using System.Collections.Specialized;
 using Avalonia.Controls.Generators;
 using Avalonia.Controls.Templates;
+using Avalonia.Controls.Utils;
+using Avalonia.LogicalTree;
 using Avalonia.Styling;
 
 namespace Avalonia.Controls.Presenters
@@ -63,24 +65,27 @@ namespace Avalonia.Controls.Presenters
 
             set
             {
-                if (_createdPanel)
-                {
-                    INotifyCollectionChanged incc = _items as INotifyCollectionChanged;
+                //if (_createdPanel)
+                //{
+                //    INotifyCollectionChanged incc = _items as INotifyCollectionChanged;
 
-                    if (incc != null)
-                    {
-                        incc.CollectionChanged -= ItemsCollectionChanged;
-                    }
-                }
+                //    if (incc != null)
+                //    {
+                //        incc.CollectionChanged -= ItemsCollectionChanged;
+                //    }
+                //}
+                _collChanged?.Dispose();
+                _collChanged = null;
 
                 if (_createdPanel && value != null)
                 {
-                    INotifyCollectionChanged incc = value as INotifyCollectionChanged;
+                    //INotifyCollectionChanged incc = value as INotifyCollectionChanged;
 
-                    if (incc != null)
-                    {
-                        incc.CollectionChanged += ItemsCollectionChanged;
-                    }
+                    //if (incc != null)
+                    //{
+                    //    incc.CollectionChanged += ItemsCollectionChanged;
+                    //}
+                    _collChanged = value.SubscribeForCollectionChangesSafe(ItemsCollectionChanged);
                 }
 
                 SetAndRaise(ItemsProperty, ref _items, value);
@@ -233,12 +238,14 @@ namespace Avalonia.Controls.Presenters
 
             _createdPanel = true;
 
-            INotifyCollectionChanged incc = Items as INotifyCollectionChanged;
+            //INotifyCollectionChanged incc = Items as INotifyCollectionChanged;
 
-            if (incc != null)
-            {
-                incc.CollectionChanged += ItemsCollectionChanged;
-            }
+            //if (incc != null)
+            //{
+            //    incc.CollectionChanged += ItemsCollectionChanged;
+            //}
+
+            _collChanged = Items.SubscribeForCollectionChangesSafe(ItemsCollectionChanged);
 
             PanelCreated(Panel);
 
@@ -262,5 +269,15 @@ namespace Avalonia.Controls.Presenters
         {
             (e.NewValue as IItemsPresenterHost)?.RegisterItemsPresenter(this);
         }
+
+        protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromLogicalTree(e);
+
+            _collChanged?.Dispose();
+            _collChanged = null;
+        }
+
+        private IDisposable _collChanged;
     }
 }
