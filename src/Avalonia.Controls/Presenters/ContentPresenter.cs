@@ -201,7 +201,10 @@ namespace Avalonia.Controls.Presenters
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
             base.OnAttachedToVisualTree(e);
-            _dataTemplate = null;
+            //reseting the data template causes some problems
+            //when data template need to be reused
+            //probably null it when removedfrom logical tree
+            //_dataTemplate = null;
         }
 
         /// <summary>
