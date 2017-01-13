@@ -371,6 +371,20 @@ namespace Avalonia.Controls.Presenters
             //or panel is not attached to visual tree
             if (panel.IsAttachedToVisualTree && generator.Containers.Any())
             {
+
+                if (delta > 0)
+                {
+                    //validate delta it should never overflow last index
+                    if ((FirstIndex + delta + panel.Children.Count) > ItemCount)
+                    {
+                        delta = ItemCount - FirstIndex - panel.Children.Count;
+                    }
+                }
+                else if ((FirstIndex + delta) < 0)
+                {
+                    delta = -FirstIndex;
+                }
+
                 var selector = Owner.MemberSelector;
                 var sign = delta < 0 ? -1 : 1;
                 var count = Math.Min(Math.Abs(delta), panel.Children.Count);
