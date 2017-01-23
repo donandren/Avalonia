@@ -94,17 +94,23 @@ namespace Avalonia.Controls.Presenters
             }
         }
 
+        private bool _prevAttachedVT = true;
         /// <inheritdoc/>
         public override void UpdateControls()
         {
             //sometimes controls been tried to be updated 
             //but panel is not in the visual tree
             //causing NullReferenceException
+
             if (VirtualizingPanel.IsAttachedToVisualTree == true)
             {
+                if (!_prevAttachedVT) RecycleContainersOnRemove();
+
                 CreateAndRemoveContainers();
                 InvalidateScroll();
             }
+
+            _prevAttachedVT = VirtualizingPanel.IsAttachedToVisualTree;
         }
 
         /// <inheritdoc/>
