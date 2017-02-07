@@ -116,6 +116,15 @@ namespace Avalonia.Controls.Presenters
         /// <inheritdoc/>
         public override void ItemsChanged(IEnumerable items, NotifyCollectionChangedEventArgs e)
         {
+            if(items != Items && Items != null)
+            {
+                //collection is changed let's reset everything
+                //that's a temp hack, but should work properly
+                VirtualizingPanel.PixelOffset = 0;
+                RemoveContainers(VirtualizingPanel.Children.Count);
+                FirstIndex = NextIndex = 0;
+            }
+
             base.ItemsChanged(items, e);
 
             var panel = VirtualizingPanel;
@@ -157,8 +166,10 @@ namespace Avalonia.Controls.Presenters
             }
             else
             {
-                Owner.ItemContainerGenerator.Clear();
-                VirtualizingPanel.Children.Clear();
+                //Owner.ItemContainerGenerator.Clear();
+                //VirtualizingPanel.Children.Clear();
+                //better call removecontainers as otherwise Dematerialize will not be called
+                RemoveContainers(VirtualizingPanel.Children.Count);
                 FirstIndex = NextIndex = 0;
             }
 
