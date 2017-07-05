@@ -13,12 +13,15 @@ public class Packages
         // NUGET NUSPECS
         context.Information("Getting git modules:");
 
-        var ignoredSubModulesPaths = System.IO.File.ReadAllLines(".git/config").Where(m=>m.StartsWith("[submodule ")).Select(m => 
+        var ignoredSubModulesPaths = new List<string>();
+        try{
+        ignoredSubModulesPaths = System.IO.File.ReadAllLines(".git/config").Where(m=>m.StartsWith("[submodule ")).Select(m => 
         {
             var path = m.Split(' ')[1].Trim("\"[] \t".ToArray());
             context.Information(path);
             return ((DirectoryPath)context.Directory(path)).FullPath;
         }).ToList();
+        }catch(Exception e) {context.Warning("Failed Getting git modules:" + e.Message);}
 
         var normalizePath = new Func<string, string>(
             path => path.Replace(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar).ToUpperInvariant());
@@ -144,8 +147,10 @@ public class Packages
             new [] { "./src/Markup/", "Avalonia.Markup.Xaml", ".dll" },
             new [] { "./src/Markup/", "Avalonia.Markup.Xaml", ".xml" }
         };
-
-        var coreLibrariesFiles = coreLibraries.Select((lib) => {
+        
+        bool skipXml = parameters.Configuration == "Debug";
+        //skipxml files when debug
+        var coreLibrariesFiles = coreLibraries.Where((l)=> !skipXml || l[2] !=".xml").Select((lib) => {
             return (FilePath)context.File(lib[0] + lib[1] + "/bin/" + parameters.DirSuffix + "/netstandard1.1/" + lib[1] + lib[2]);
         }).ToList();
 
@@ -489,7 +494,7 @@ public class Packages
 
         NuspecNuGetSettings.AddRange(nuspecNuGetSettingsCore);
         NuspecNuGetSettings.AddRange(nuspecNuGetSettingsDesktop);
-        NuspecNuGetSettings.AddRange(nuspecNuGetSettingsMobile);
+        //NuspecNuGetSettings.AddRange(nuspecNuGetSettingsMobile);
 
         NuspecNuGetSettings.ForEach((nuspec) => SetNuGetNuspecCommonProperties(nuspec));
 

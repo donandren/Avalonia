@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #addin "nuget:?package=Polly&version=4.2.0"
-#addin "nuget:?package=NuGet.Core&version=2.12.0"
+#addin "nuget:?package=NuGet.Core&version=2.14.0"
 #tool "nuget:https://dotnet.myget.org/F/nuget-build/?package=NuGet.CommandLine&version=4.3.0-preview1-3980&prerelease"
 #tool "nuget:?package=JetBrains.dotMemoryUnit&version=2.3.20160517.113140"
 #tool "JetBrains.ReSharper.CommandLineTools"
@@ -143,6 +143,7 @@ Task("Build")
     if(parameters.IsRunningOnWindows)
     {
         MSBuild(parameters.MSBuildSolution, settings => {
+            UpdateMSBuildLogger(settings);
             settings.SetConfiguration(parameters.Configuration);
             settings.WithProperty("Platform", "\"" + parameters.Platform + "\"");
             settings.WithProperty("UseRoslynPathHack", "true");
@@ -157,6 +158,16 @@ Task("Build")
         DotNetCoreBuild();
     }
 });
+
+public void UpdateMSBuildLogger(MSBuildSettings sett)
+{
+	if(Context.BuildSystem().IsRunningOnTeamCity)
+	{
+		string buildAgentDir = Context.Environment.GetEnvironmentVariable("TEAMCITY_JRE").Replace("jre","");
+		sett.WithLogger(buildAgentDir + @"plugins\dotnetPlugin\bin\JetBrains.BuildServer.MSBuildLoggers.dll", 
+										"JetBrains.BuildServer.MSBuildLoggers.MSBuildLogger");
+	}
+}
 
 void RunCoreTest(string dir, Parameters parameters, bool net461Only)
 {
@@ -251,14 +262,14 @@ Task("Run-Unit-Tests")
     {
         testsInDirectoryToRun.AddRange(GetFiles("./artifacts/tests/*.UnitTests.dll"));
     }
-
+    /*
     if(parameters.IsRunningOnWindows)
     {
         OpenCover(context => {
             context.XUnit2(testsInDirectoryToRun, xUnitSettings);
         }, openCoverOutput, openCoverSettings);
     }
-    else
+    else*/
     {
         XUnit2(testsInDirectoryToRun, xUnitSettings);
     }
@@ -287,8 +298,9 @@ Task("Zip-Files")
 });
 
 Task("Create-NuGet-Packages")
-    .IsDependentOn("Run-Unit-Tests")
-    .IsDependentOn("Inspect")
+    //.IsDependentOn("Run-Unit-Tests")
+    .IsDependentOn("Build")
+    //.IsDependentOn("Inspect")
     .Does(() =>
 {
     foreach(var nuspec in packages.NuspecNuGetSettings)

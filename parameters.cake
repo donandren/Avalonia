@@ -56,7 +56,7 @@ public class Parameters
         AssemblyInfoPath = context.File("./src/Shared/SharedAssemblyInfo.cs");
         ReleasePlatform = "Any CPU";
         ReleaseConfiguration = "Release";
-        MSBuildSolution = "./Avalonia.sln";
+        MSBuildSolution = "./Avalonia.Desktop.sln";
         XBuildSolution = "./Avalonia.XBuild.sln";
 
         // PARAMETERS
