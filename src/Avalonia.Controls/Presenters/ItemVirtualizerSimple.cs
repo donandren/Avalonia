@@ -60,6 +60,8 @@ namespace Avalonia.Controls.Presenters
                         if (panel.PixelOffset > 0)
                         {
                             panel.PixelOffset = 0;
+                            //tmp: skip the edge case - if we have 99 newLastIndex and 100 items we'll have indexoutofrangeexception
+                            if (newLastIndex < (ItemCount - 1))
                             delta += 1;
                         }
 
