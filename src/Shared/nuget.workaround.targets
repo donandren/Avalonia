@@ -5,13 +5,13 @@
   It can most likely be removed when the next version of NuGet.BuildTasks is released: https://github.com/NuGet/NuGet.BuildTasks/pull/29
 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <UsingTask TaskName="Microsoft.NuGet.Build.Tasks.ResolveNuGetPackageAssetsPatched" AssemblyFile="Microsoft.NuGet.Build.Tasks.Patched.dll" />
+   <!--<UsingTask TaskName="Microsoft.NuGet.Build.Tasks.ResolveNuGetPackageAssetsPatched" AssemblyFile="Microsoft.NuGet.Build.Tasks.Patched.dll" />-->
 
   <Target Name="ResolveNuGetPackageAssets"
           DependsOnTargets="$(ResolveNuGetPackageAssetsDependsOn)"
           Condition="'$(ResolveNuGetPackages)' == 'true' and exists('$(ProjectLockFile)')">
 
-    <ResolveNuGetPackageAssetsPatched AllowFallbackOnTargetSelection="$(DesignTimeBuild)"
+    <ResolveNuGetPackageAssets AllowFallbackOnTargetSelection="$(DesignTimeBuild)"
                                ContinueOnError="$(ContinueOnError)"
                                IncludeFrameworkReferences="$(IncludeFrameworkReferencesFromNuGet)"
                                NuGetPackagesDirectory="$(NuGetPackagesDirectory)"
@@ -28,7 +28,7 @@
       <Output TaskParameter="ReferencedPackages" ItemName="ReferencedNuGetPackages" />
       <Output TaskParameter="ContentItems" ItemName="_NuGetContentItems" />
       <Output TaskParameter="FileWrites" ItemName="FileWrites" />
-    </ResolveNuGetPackageAssetsPatched>
+    </ResolveNuGetPackageAssets>
 
     <ItemGroup>
       <!-- Remove exact references, such as if a package had a framework reference to 'System' that we already have -->
