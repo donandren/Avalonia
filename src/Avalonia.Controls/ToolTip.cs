@@ -107,7 +107,9 @@ namespace Avalonia.Controls
             {
                 if (s_popup != null)
                 {
-                    throw new AvaloniaInternalException("Previous ToolTip not disposed.");
+                    // throw new AvaloniaInternalException("Previous ToolTip not disposed.");
+                    //TODO: remove this after we upgrade to latest avalonia
+                    ControlPointerLeave(s_current, new PointerEventArgs());
                 }
 
                 var cp = MouseDevice.Instance?.GetPosition(control);
