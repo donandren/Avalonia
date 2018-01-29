@@ -75,13 +75,31 @@ namespace Avalonia.Threading
         /// <inheritdoc/>
         public Task InvokeTaskAsync(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
         {
-            return _jobRunner?.InvokeAsync(action, priority);
+            return _jobRunner?.InvokeAsync(Wrap(action), priority);
         }
 
         /// <inheritdoc/>
         public void InvokeAsync(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
         {
-            _jobRunner?.Post(action, priority);
+            _jobRunner?.Post(Wrap(action), priority);
+        }
+
+        private static Action Wrap(Action action)
+        {
+            return () =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception e)
+                {
+                    //notify app exception happend, but don't crash
+                    //TODO: think of avalonia exception handler ???
+                    ReactiveUI.RxApp.DefaultExceptionHandler
+                        .OnNext(new Exception(typeof(Dispatcher).Name + " Unhandled Exception! " + e.Message, e));
+                }
+            };
         }
 
         /// <summary>
