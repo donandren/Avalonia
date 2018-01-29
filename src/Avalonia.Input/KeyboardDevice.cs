@@ -21,7 +21,20 @@ namespace Avalonia.Input
             InputManager.Process
                 .OfType<RawInputEventArgs>()
                 .Where(e => e.Device == this && !e.Handled)
-                .Subscribe(ProcessRawEvent);
+                .Subscribe(v =>
+                {
+                    try
+                    {
+                        ProcessRawEvent(v);
+                    }
+                    catch (Exception e)
+                    {
+                        //notify app exception happend, but don't crash
+                        //TODO: think of avalonia exception handler ???
+                        ReactiveUI.RxApp.DefaultExceptionHandler
+                            .OnNext(new Exception(GetType().Name + ".ProcessRawEvent Unhandled Exception! " + e.Message, e));
+                    }
+                });
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
