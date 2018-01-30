@@ -4,7 +4,7 @@
 
 #addin "nuget:?package=Polly&version=4.2.0"
 #addin "nuget:?package=NuGet.Core&version=2.14.0"
-#tool "nuget:https://dotnet.myget.org/F/nuget-build/?package=NuGet.CommandLine&version=4.3.0-preview1-3980&prerelease"
+#tool "nuget:?package=NuGet.CommandLine&version=4.3.0"
 #tool "nuget:?package=JetBrains.dotMemoryUnit&version=2.3.20160517.113140"
 #tool "JetBrains.ReSharper.CommandLineTools"
 ///////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,13 @@ void RunCoreTest(string dir, Parameters parameters, bool net461Only)
 {
     Information("Running tests from " + dir);
     DotNetCoreRestore(dir);
-    var frameworks = new List<string>(){"netcoreapp1.1"};
+	//issue with build server let's skip temp netcore tests 
+//[15:40:18][Step 1/3] The specified framework 'Microsoft.NETCore.App', version '1.1.2' was not found.
+//[15:40:18][Step 1/3]   - Check application dependencies and target a framework version installed at:
+//[15:40:18][Step 1/3]       \
+//[15:40:18][Step 1/3]   - Alternatively, install the framework version '1.1.2'.
+    //var frameworks = new List<string>(){"netcoreapp1.1"};
+	var frameworks = new List<string>();
     if(parameters.IsRunningOnWindows)
         frameworks.Add("net461");
     foreach(var fw in frameworks)
