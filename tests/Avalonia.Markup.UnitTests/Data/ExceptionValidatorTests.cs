@@ -89,5 +89,41 @@ namespace Avalonia.Markup.UnitTests.Data
 
             Assert.False(status.IsValid);
         }
+
+        [Fact]
+        public void Nulltarget_Dont_Throw_Exception()
+        {
+            var inpcAccessorPlugin = new InpcPropertyAccessorPlugin();
+            Data data = null;
+           
+            var accessor = inpcAccessorPlugin.Start(new WeakReference(data), nameof(data.MustBePositive), _ => { });
+
+            var ex = ((accessor as PropertyError).Value as BindingError).Exception as MissingMemberException;
+
+            Assert.NotNull(ex);
+            Assert.Equal(ex.Message, "Could not find CLR property 'MustBePositive' on ''");
+        }
+
+        [Fact]
+        public void GCCollectedTarget_Dont_Throw_Exception_OnValueGet()
+        {
+            var inpcAccessorPlugin = new InpcPropertyAccessorPlugin();
+            Data data = new Data() { NonValidated = 1 };
+
+            var accessor = inpcAccessorPlugin.Start(new WeakReference(data), nameof(data.NonValidated), _ => { });
+
+            Assert.Equal(1, (int)accessor.Value);
+
+            var wr = new WeakReference<Data>(data);
+
+            data = null;
+            GC.Collect();
+            Assert.False(wr.TryGetTarget(out data));
+            //data is collected
+
+            object value = accessor.Value;
+
+            Assert.True(value is BindingError);
+        }
     }
 }

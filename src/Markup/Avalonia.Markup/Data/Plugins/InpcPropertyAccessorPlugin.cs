@@ -42,8 +42,8 @@ namespace Avalonia.Markup.Data.Plugins
         /// property will be made.
         /// </returns>
         public IPropertyAccessor Start(
-            WeakReference reference, 
-            string propertyName, 
+            WeakReference reference,
+            string propertyName,
             Action<object> changed)
         {
             Contract.Requires<ArgumentNullException>(reference != null);
@@ -51,7 +51,7 @@ namespace Avalonia.Markup.Data.Plugins
             Contract.Requires<ArgumentNullException>(changed != null);
 
             var instance = reference.Target;
-            var p = instance.GetType().GetRuntimeProperties().FirstOrDefault(_ => _.Name == propertyName);
+            var p = instance?.GetType().GetRuntimeProperties().FirstOrDefault(_ => _.Name == propertyName);
 
             if (p != null)
             {
@@ -72,8 +72,8 @@ namespace Avalonia.Markup.Data.Plugins
             private readonly Action<object> _changed;
 
             public Accessor(
-                WeakReference reference, 
-                PropertyInfo property, 
+                WeakReference reference,
+                PropertyInfo property,
                 Action<object> changed)
             {
                 Contract.Requires<ArgumentNullException>(reference != null);
@@ -100,13 +100,28 @@ namespace Avalonia.Markup.Data.Plugins
                         "Bound to property {Property} on {Source} which does not implement INotifyPropertyChanged",
                         property.Name,
                         reference.Target,
-                        reference.Target.GetType());
+                        reference.Target?.GetType());
                 }
             }
 
             public Type PropertyType => _property.PropertyType;
 
-            public object Value => _property.GetValue(_reference.Target);
+            //possible nullreference, no guarantee target is alive
+            //public object Value => _property.GetValue(_reference.Target);
+            public object Value
+            {
+                get
+                {
+                    object target = _reference.Target;
+
+                    if (target == null)
+                    {
+                        return new BindingError(new ObjectDisposedException("target", "Target is already GC collected!"));
+                    }
+
+                    return _property.GetValue(target);
+                }
+            }
 
             public void Dispose()
             {
