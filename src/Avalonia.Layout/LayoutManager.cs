@@ -181,7 +181,8 @@ namespace Avalonia.Layout
 
             if (!control.IsMeasureValid)
             {
-                control.Measure(control.PreviousMeasure.Value);
+                //fix possible null reference
+                control.Measure(control.PreviousMeasure ?? Size.Infinity);
                 IncrementCount(control, _currentMeasured);
             }
 
