@@ -37,12 +37,11 @@ namespace Avalonia.Controls.Utils
 
         public void Undo()
         {
-			if (_currentNode != null)  
-			{
-				_currentNode = _currentNode.Previous;
-			}
-
-			_host.UndoRedoState = _currentNode.Value;            
+            if (_currentNode.Previous != null)
+            {
+                _currentNode = _currentNode.Previous;
+                _host.UndoRedoState = _currentNode.Value;
+            }
         }
 
         public bool IsLastState => _currentNode.Next == null;
@@ -67,12 +66,12 @@ namespace Avalonia.Controls.Utils
         }
 
         public void Redo()
-        {            
-			if (_currentNode != null) {
-				_currentNode = _currentNode.Next;
-			}
-
-			_host.UndoRedoState = _currentNode.Value;
+        {
+            if (_currentNode.Next != null)
+            {
+                _currentNode = _currentNode.Next;
+                _host.UndoRedoState = _currentNode.Value;
+            }
         }
 
         public void Snapshot()

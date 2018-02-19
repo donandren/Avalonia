@@ -254,8 +254,25 @@ namespace Avalonia.Controls
                     DeleteSelection();
                     caretIndex = CaretIndex;
                     text = Text ?? string.Empty;
-                    Text = text.Substring(0, caretIndex) + input + text.Substring(caretIndex);
-                    CaretIndex += input.Length;
+
+                    //fix someedge cases no guarantee caretindex is in text range
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        caretIndex = 0;
+                        Text = input;
+                    }
+                    else
+                    {
+                        if (caretIndex > text.Length)
+                        {
+                            //assume end of the string, still better than crash
+                            caretIndex = text.Length;
+                        }
+
+                        Text = text.Substring(0, caretIndex) + input + text.Substring(caretIndex);
+                    }
+
+                    CaretIndex = caretIndex + input.Length;
                     SelectionStart = SelectionEnd = CaretIndex;
                     _undoRedoHelper.DiscardRedo();
                 }
@@ -304,7 +321,7 @@ namespace Avalonia.Controls
                     break;
 
                 case Key.X:
-                    if(modifiers == InputModifiers.Control)
+                    if (modifiers == InputModifiers.Control)
                     {
                         Copy();
                         DeleteSelection();
@@ -638,7 +655,7 @@ namespace Avalonia.Controls
         private void SelectAll()
         {
             SelectionStart = 0;
-            SelectionEnd = Text.Length;
+            SelectionEnd = Text?.Length ?? 0;
         }
 
         private bool DeleteSelection()
@@ -653,9 +670,22 @@ namespace Avalonia.Controls
                     var start = Math.Min(selectionStart, selectionEnd);
                     var end = Math.Max(selectionStart, selectionEnd);
                     var text = Text;
-                    Text = text.Substring(0, start) + text.Substring(end);
+                    int len = string.IsNullOrEmpty(text) ? 0 : text.Length;
+                    bool result = true;
+                    //prevent possible exceptions
+                    if (len == 0 || len < end)
+                    {
+                        //invalid state let's not change anything
+                        start = 0;
+                        result = false;
+                    }
+                    else
+                    {
+                        Text = text.Substring(0, start) + text.Substring(end);
+                    }
+
                     SelectionStart = SelectionEnd = CaretIndex = start;
-                    return true;
+                    return result;
                 }
                 else
                 {
