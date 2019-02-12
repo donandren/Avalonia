@@ -2,8 +2,8 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Xunit;
 
 namespace Avalonia.Layout.UnitTests
@@ -73,7 +73,6 @@ namespace Avalonia.Layout.UnitTests
                 }
             };
 
-
             var order = new List<ILayoutable>();
             Size MeasureOverride(ILayoutable control, Size size)
             {
@@ -108,7 +107,6 @@ namespace Avalonia.Layout.UnitTests
                     Child = control2 = new LayoutTestControl(),
                 }
             };
-
 
             var order = new List<ILayoutable>();
             Size MeasureOverride(ILayoutable control, Size size)
@@ -195,9 +193,9 @@ namespace Avalonia.Layout.UnitTests
                 Width = 100,
                 Height = 100,
             };
- 
+
             var arrangeSize = default(Size);
- 
+
             root.DoArrangeOverride = (_, s) =>
             {
                 arrangeSize = s;
@@ -206,7 +204,7 @@ namespace Avalonia.Layout.UnitTests
 
             root.LayoutManager.ExecuteInitialLayoutPass(root);
             Assert.Equal(new Size(100, 100), arrangeSize);
- 
+
             root.Width = 120;
 
             root.LayoutManager.ExecuteLayoutPass();
@@ -241,59 +239,107 @@ namespace Avalonia.Layout.UnitTests
         }
 
         [Fact]
-        public void Multiple_Shapes_When_Visibled_Should_Be_Arranged_Properly()
+        public void LayoutManager_Should_Prevent_Infinity_Loop_On_Measure()
         {
+            var control = new LayoutTestControl();
+            var root = new LayoutTestRoot { Child = control };
+
+            root.LayoutManager.ExecuteInitialLayoutPass(root);
+            control.Measured = false;
+
+            int cnt = 0;
+            int maxcnt = 100;
+            control.DoMeasureOverride = (l, s) =>
+            {
+                //emulate a problem in the logic of a control that triggers
+                //invalidate measure during measure
+                //it can lead to infinity loop in layoutmanager
+                if (++cnt < maxcnt)
+                {
+                    control.InvalidateMeasure();
+                }
+
+                return new Size(100, 100);
+            };
+
+            control.InvalidateMeasure();
+
+            root.LayoutManager.ExecuteLayoutPass();
+
+            Assert.True(cnt < 100);
+        }
+
+        [Fact]
+        public void LayoutManager_Should_Prevent_Infinity_Loop_On_Arrange()
+        {
+            var control = new LayoutTestControl();
+            var root = new LayoutTestRoot { Child = control };
+
+            root.LayoutManager.ExecuteInitialLayoutPass(root);
+            control.Arranged = false;
+
+            int cnt = 0;
+            int maxcnt = 100;
+            control.DoArrangeOverride = (l, s) =>
+            {
+                //emulate a problem in the logic of a control that triggers
+                //invalidate measure during arrange
+                //it can lead to infinity loop in layoutmanager
+                if (++cnt < maxcnt)
+                {
+                    control.InvalidateArrange();
+                }
+
+                return new Size(100, 100);
+            };
+
+            control.InvalidateArrange();
+
+            root.LayoutManager.ExecuteLayoutPass();
+
+            Assert.True(cnt < 100);
+        }
+
+        [Fact]
+        public void LayoutManager_Should_Properly_Arrange_Visuals_Even_There_Are_Issues_With_Previous_Arranged()
+        {
+            var nonArrageableTargets = Enumerable.Range(1, 10).Select(_ => new LayoutTestControl()).ToArray();
+            var targets = Enumerable.Range(1, 10).Select(_ => new LayoutTestControl()).ToArray();
+
             StackPanel panel;
 
             var root = new LayoutTestRoot
             {
-                Child = panel = new StackPanel(),
-                Width = 100,
-                Height = 100
+                Child = panel = new StackPanel()
             };
 
-            for (int i = 0; i < 10; i++)
-            {
-                panel.Children.Add(new Border()
-                {
-                    Width = 10,
-                    Height = 10,
-                    //Rectangle or Ellipse shape should be the same result,
-                    //as they require 2 measure/arrange for the same layout pass
-                    Child = new Rectangle()
-                    {
-                        Height = 10,
-                        Width = 10,
-                        IsVisible = false
-                    }
-                });
-            }
+            panel.Children.AddRange(nonArrageableTargets);
+            panel.Children.AddRange(targets);
 
             root.LayoutManager.ExecuteInitialLayoutPass(root);
 
-            //ensure we haven't measured/arranged the rectangle shapes as they are invisible
-            foreach (var child in panel.Children)
+            foreach (var c in panel.Children.OfType<LayoutTestControl>())
             {
-                Assert.True((child as Border).Child.Bounds.IsEmpty);
+                c.Measured = c.Arranged = false;
+                c.InvalidateMeasure();
             }
 
-            //make visible all the shapes
-            foreach (var child in panel.Children)
+            foreach (var c in nonArrageableTargets)
             {
-                (child as Border).Child.IsVisible = true;
+                c.DoArrangeOverride = (l, s) =>
+                {
+                    //emulate a problem in the logic of a control that triggers
+                    //invalidate measure during arrange
+                    c.InvalidateMeasure();
+                    return new Size(100, 100);
+                };
             }
 
             root.LayoutManager.ExecuteLayoutPass();
 
-            foreach (var child in panel.Children)
-            {
-                Assert.True(child.IsMeasureValid);
-                Assert.True(child.IsArrangeValid);
-                var shapeChild = (child as Border).Child;
-                Assert.True(shapeChild.IsMeasureValid);
-                Assert.True(shapeChild.IsArrangeValid);
-                Assert.False(shapeChild.Bounds.IsEmpty);
-            }
+            //altough nonArrageableTargets has rubbish logic and can't be measured/arranged properly
+            //layoutmanager should process properly other visuals
+            Assert.All(targets, c => Assert.True(c.Arranged));
         }
     }
 }
