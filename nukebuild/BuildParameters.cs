@@ -21,7 +21,10 @@ public partial class Build
     
     [Parameter("force-nuget-version")]
     public string ForceNugetVersion { get; set; }
-    
+
+    [Parameter("nuget-buildtag")]
+    public string NugetBuildTag { get; set; }
+
     public class BuildParameters
     {
         public string Configuration { get; }
@@ -100,6 +103,11 @@ public partial class Build
             IsReleasable = StringComparer.OrdinalIgnoreCase.Equals(ReleaseConfiguration, Configuration);
             IsMyGetRelease = IsReleasable;
             IsNuGetRelease = IsMainRepo && IsReleasable && IsReleaseBranch;
+
+            //let's force well known version meaning something to us
+            b.ForceNugetVersion = $"{GetVersion()}{(string.IsNullOrEmpty(b.NugetBuildTag) ? "" : $"-{ b.NugetBuildTag}")}";
+
+            TeamCity.Instance?.SetBuildNumber(b.ForceNugetVersion);
 
             // VERSION
             Version = b.ForceNugetVersion ?? GetVersion();

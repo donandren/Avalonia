@@ -20,6 +20,7 @@ using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.Xunit.XunitTasks;
 using static Nuke.Common.Tools.VSWhere.VSWhereTasks;
+using System.IO.Compression;
 
 /*
  Before editing this file, install support plugin for your IDE,
@@ -54,7 +55,7 @@ partial class Build : NukeBuild
     protected override void OnBuildInitialized()
     {
         Parameters = new BuildParameters(this);
-        Information("Building version {0} of Avalonia ({1}) using version {2} of Nuke.", 
+        Information("Building version {0} of Avalonia ({1}) using version {2} of Nuke.",
             Parameters.Version,
             Parameters.Configuration,
             typeof(NukeBuild).Assembly.GetName().Version.ToString());
@@ -80,7 +81,7 @@ partial class Build : NukeBuild
         void ExecWait(string preamble, string command, string args)
         {
             Console.WriteLine(preamble);
-            Process.Start(new ProcessStartInfo(command, args) {UseShellExecute = false}).WaitForExit();
+            Process.Start(new ProcessStartInfo(command, args) { UseShellExecute = false }).WaitForExit();
         }
         ExecWait("dotnet version:", "dotnet", "--version");
         if (Parameters.IsRunningOnUnix)
@@ -134,7 +135,7 @@ partial class Build : NukeBuild
     });
 
     Target Compile => _ => _
-        .DependsOn(Clean, CompileNative)
+        .DependsOn(Clean, CompileNative, DownloadAvaloniaNativeLib)
         .Executes(() =>
         {
             if (Parameters.IsRunningOnWindows)
@@ -149,11 +150,11 @@ partial class Build : NukeBuild
                     .SetConfiguration(Parameters.Configuration)
                 );
         });
-    
+
     void RunCoreTest(string project)
     {
-        if(!project.EndsWith(".csproj"))
-            project = System.IO.Path.Combine(project, System.IO.Path.GetFileName(project)+".csproj");
+        if (!project.EndsWith(".csproj"))
+            project = System.IO.Path.Combine(project, System.IO.Path.GetFileName(project) + ".csproj");
         Information("Running tests from " + project);
         XDocument xdoc;
         using (var s = File.OpenRead(project))
@@ -163,13 +164,13 @@ partial class Build : NukeBuild
         var targets = xdoc.Root.Descendants("TargetFrameworks").FirstOrDefault();
         if (targets != null)
             frameworks = targets.Value.Split(';').Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
-        else 
-            frameworks = new List<string> {xdoc.Root.Descendants("TargetFramework").First().Value};
-        
-        foreach(var fw in frameworks)
+        else
+            frameworks = new List<string> { xdoc.Root.Descendants("TargetFramework").First().Value };
+
+        foreach (var fw in frameworks)
         {
             if (fw.StartsWith("net4")
-                && RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 && Environment.GetEnvironmentVariable("FORCE_LINUX_TESTS") != "1")
             {
                 Information($"Skipping {fw} tests on Linux - https://github.com/mono/mono/issues/13969");
@@ -221,7 +222,7 @@ partial class Build : NukeBuild
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 RunCoreTest("./tests/Avalonia.Direct2D1.RenderTests/Avalonia.Direct2D1.RenderTests.csproj");
         });
-    
+
     Target RunDesignerTests => _ => _
         .OnlyWhen(() => !Parameters.SkipTests && Parameters.IsRunningOnWindows)
         .DependsOn(Compile)
@@ -244,7 +245,7 @@ partial class Build : NukeBuild
         });
 
     Target ZipFiles => _ => _
-        .After(CreateNugetPackages, Compile, RunCoreLibsTests, Package)    
+        .After(CreateNugetPackages, Compile, RunCoreLibsTests, Package)
         .Executes(() =>
         {
             var data = Parameters;
@@ -258,14 +259,39 @@ partial class Build : NukeBuild
                     GlobFiles(data.ZipSourceControlCatalogDesktopDir, "*.exe")));
         });
 
+    Target DownloadAvaloniaNativeLib => _ => _
+        .After(Clean)
+        .OnlyWhen(() => EnvironmentInfo.IsWin)
+        .Executes(() =>
+        {
+            //download avalonia native osx binary, so we don't have to build it on osx
+            //expected to be -> Build/Products/Release/libAvalonia.Native.OSX.dylib
+
+            string nugetversion = "0.8.3";
+
+            var nugetdir = RootDirectory + "/Build/Products/Release/";
+            //string nugeturl = "https://www.myget.org/F/avalonia-ci/api/v2/package/Avalonia.Native/";
+            string nugeturl = "https://www.nuget.org/api/v2/package/Avalonia.Native/";
+            string nugetname = $"Avalonia.Native.{nugetversion}";
+            string nugetcontentsdir = Path.Combine(nugetdir, nugetname);
+            string nugetpath = nugetcontentsdir + ".nupkg";
+
+            Nuke.Common.IO.HttpTasks.HttpDownloadFile(nugeturl + nugetversion, nugetpath);
+            System.IO.Compression.ZipFile.ExtractToDirectory(nugetpath, nugetcontentsdir, true);
+
+            CopyFile(nugetcontentsdir + @"\runtimes\osx\native\libAvaloniaNative.dylib", nugetdir + "libAvalonia.Native.OSX.dylib", FileExistsPolicy.Overwrite);
+        });
+
     Target CreateIntermediateNugetPackages => _ => _
         .DependsOn(Compile)
+        .DependsOn(DownloadAvaloniaNativeLib)
         .After(RunTests)
         .Executes(() =>
         {
             if (Parameters.IsRunningOnWindows)
 
                 MsBuildCommon(Parameters.MSBuildSolution, c => c
+                    .AddProperty("PackAvaloniaNative", "true")
                     .AddTargets("Pack"));
             else
                 DotNetPack(Parameters.MSBuildSolution, c =>
@@ -279,33 +305,70 @@ partial class Build : NukeBuild
         {
             var config = Numerge.MergeConfiguration.LoadFile(RootDirectory / "nukebuild" / "numerge.config");
             EnsureCleanDirectory(Parameters.NugetRoot);
-            if(!Numerge.NugetPackageMerger.Merge(Parameters.NugetIntermediateRoot, Parameters.NugetRoot, config,
+            if (!Numerge.NugetPackageMerger.Merge(Parameters.NugetIntermediateRoot, Parameters.NugetRoot, config,
                 new NumergeNukeLogger()))
                 throw new Exception("Package merge failed");
         });
-    
+
+
+    Target PublishLocalNugetPackages => _ => _
+    .DependsOn(CreateNugetPackages)
+    .Executes(() =>
+    {
+        string nugetPackagesDir = Variable("NUGET_PACKAGES") ?? Path.Combine(Variable("USERPROFILE") ?? Variable("HOME"), ".nuget/packages");
+
+        foreach (var package in Directory.EnumerateFiles(Parameters.NugetRoot))
+        {
+            var packName = Path.GetFileName(package);
+            string packgageFolderName = packName.Replace($".{Parameters.Version}.nupkg", "");
+            var nugetCaheFolder = Path.Combine(nugetPackagesDir, packgageFolderName, Parameters.Version);
+
+            //EnsureCleanDirectory(nugetCaheFolder);
+            EnsureExistingDirectory(nugetCaheFolder);
+
+            CopyFile(package, nugetCaheFolder + "/" + packName, FileExistsPolicy.Skip);
+
+            ZipFile.ExtractToDirectory(package, nugetCaheFolder, true);
+        }
+    });
+
+    Target ClearLocalNugetPackages => _ => _
+    .Executes(() =>
+    {
+        string nugetPackagesDir = Variable("NUGET_PACKAGES") ?? Path.Combine(Variable("USERPROFILE") ?? Variable("HOME"), ".nuget/packages");
+
+        foreach (var package in Directory.EnumerateFiles(Parameters.NugetRoot))
+        {
+            var packName = Path.GetFileName(package);
+            string packgageFolderName = packName.Replace($".{Parameters.Version}.nupkg", "");
+            var nugetCaheFolder = Path.Combine(nugetPackagesDir, packgageFolderName, Parameters.Version);
+
+            EnsureCleanDirectory(nugetCaheFolder);
+        }
+    });
+
     Target RunTests => _ => _
         .DependsOn(RunCoreLibsTests)
         .DependsOn(RunRenderTests)
         .DependsOn(RunDesignerTests)
         .DependsOn(RunLeakTests);
-    
+
     Target Package => _ => _
         .DependsOn(RunTests)
         .DependsOn(CreateNugetPackages);
-    
+
     Target CiAzureLinux => _ => _
         .DependsOn(RunTests);
-    
+
     Target CiAzureOSX => _ => _
         .DependsOn(Package)
         .DependsOn(ZipFiles);
-    
+
     Target CiAzureWindows => _ => _
         .DependsOn(Package)
         .DependsOn(ZipFiles);
 
-    
+
     public static int Main() =>
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? Execute<Build>(x => x.Package)
