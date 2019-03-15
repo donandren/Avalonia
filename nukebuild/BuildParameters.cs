@@ -101,6 +101,11 @@ public partial class Build
             IsMyGetRelease = IsReleasable;
             IsNuGetRelease = IsMainRepo && IsReleasable && IsReleaseBranch;
 
+            if (string.IsNullOrEmpty(b.ForceNugetVersion))
+            {
+                //synergy version
+                b.ForceNugetVersion = "0.7.1.12";
+            }
             // VERSION
             Version = b.ForceNugetVersion ?? GetVersion();
 

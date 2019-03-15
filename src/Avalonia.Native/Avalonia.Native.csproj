@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
+    <PackAvaloniaNative  Condition="'$(PackAvaloniaNative)' == ''">$([MSBuild]::IsOSPlatform(OSX))</PackAvaloniaNative>
+    <IsPackable>$(PackAvaloniaNative)</IsPackable>
     <IsPackable Condition="'$([MSBuild]::IsOSPlatform(OSX))' == 'True'">true</IsPackable>
     <TargetFramework>netstandard2.0</TargetFramework>
     <CastXmlPath Condition="Exists('/usr/bin/castxml')">/usr/bin/castxml</CastXmlPath>
@@ -11,7 +12,7 @@
     <SharpGenGeneratedCodeFolder>$(MSBuildThisFileDirectory)/Generated</SharpGenGeneratedCodeFolder>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Release' AND '$([MSBuild]::IsOSPlatform(OSX))' == 'true'">
+  <ItemGroup Condition="'$(Configuration)' == 'Release' AND '$(PackAvaloniaNative)' == 'true'">
     <Content Include="../../Build/Products/Release/libAvalonia.Native.OSX.dylib">
       <PackagePath>runtimes/osx/native/libAvaloniaNative.dylib</PackagePath>
       <Pack>true</Pack>

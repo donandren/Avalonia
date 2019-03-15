@@ -204,8 +204,29 @@ partial class Build : NukeBuild
                     GlobFiles(data.ZipSourceControlCatalogDesktopDir, "*.exe")));
         });
 
+    Target DownloadAvaloniaNativeLib => _ => _
+        .Executes(() =>
+        {
+            //download avalonia native osx binary, so we don't have to build it on osx
+            //expected to be -> Build/Products/Release/libAvalonia.Native.OSX.dylib
+
+            string nugetversion = "0.7.1-cibuild0001674-beta";
+
+            var nugetdir = RootDirectory + "/Build/Products/Release/";
+            string nugeturl = "https://www.myget.org/F/avalonia-ci/api/v2/package/Avalonia.Native/";
+            string nugetname = $"Avalonia.Native.{nugetversion}";
+            string nugetcontentsdir = Path.Combine(nugetdir, nugetname);
+            string nugetpath = nugetcontentsdir + ".nupkg";
+
+            Nuke.Common.IO.HttpTasks.HttpDownloadFile(nugeturl + nugetversion, nugetpath);
+            System.IO.Compression.ZipFile.ExtractToDirectory(nugetpath, nugetcontentsdir, true);
+
+            CopyFile(nugetcontentsdir + @"\runtimes\osx\native\libAvaloniaNative.dylib", nugetdir + "libAvalonia.Native.OSX.dylib", FileExistsPolicy.Overwrite);
+        });
+
     Target CreateIntermediateNugetPackages => _ => _
         .DependsOn(Compile)
+        .DependsOn(DownloadAvaloniaNativeLib)
         .After(RunTests)
         .Executes(() =>
         {
@@ -216,6 +237,7 @@ partial class Build : NukeBuild
                     .SetVerbosity(MSBuildVerbosity.Minimal)
                     .AddProperty("PackageVersion", Parameters.Version)
                     .AddProperty("iOSRoslynPathHackRequired", "true")
+                    .AddProperty("PackAvaloniaNative", "true")
                     .SetToolsVersion(MSBuildToolsVersion._15_0)
                     .AddTargets("Pack"));
             else
@@ -234,7 +256,26 @@ partial class Build : NukeBuild
                 new NumergeNukeLogger()))
                 throw new Exception("Package merge failed");
         });
-    
+
+
+    Target PublishLocalNugetPackages => _ => _
+    .DependsOn(CreateNugetPackages)
+    .Executes(() =>
+    {
+        string baseDir = Variable("USERPROFILE") ?? Variable("HOME");
+
+        string nugetPackagesDir = Path.Combine(baseDir, ".nuget/packages");
+        foreach (var package in Directory.EnumerateFiles(Parameters.NugetRoot))
+        {
+            var packName = Path.GetFileName(package);
+            string packgageFolderName = packName.Replace($".{Parameters.Version}.nupkg", "");
+            var nugetCaheFolder = Path.Combine(nugetPackagesDir, packgageFolderName, Parameters.Version);
+
+            EnsureCleanDirectory(nugetCaheFolder);
+            CopyFile(package, nugetCaheFolder + "/" + packName);
+        }
+    });
+
     Target RunTests => _ => _
         .DependsOn(RunCoreLibsTests)
         .DependsOn(RunRenderTests)
