@@ -196,3 +196,6 @@ ModuleCache.noindex/
 Build/Intermediates.noindex/
 info.plist
 build-intermediate
+
+
+packages/
