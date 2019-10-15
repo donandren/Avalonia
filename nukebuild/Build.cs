@@ -323,10 +323,13 @@ partial class Build : NukeBuild
             string packgageFolderName = packName.Replace($".{Parameters.Version}.nupkg", "");
             var nugetCaheFolder = Path.Combine(nugetPackagesDir, packgageFolderName, Parameters.Version);
 
+            //clean directory is not good, nuget will noticed and clean our files
             //EnsureCleanDirectory(nugetCaheFolder);
             EnsureExistingDirectory(nugetCaheFolder);
 
             CopyFile(package, nugetCaheFolder + "/" + packName, FileExistsPolicy.Skip);
+
+            Logger.Info($"Extracting to {nugetCaheFolder}, {package}");
 
             ZipFile.ExtractToDirectory(package, nugetCaheFolder, true);
         }
