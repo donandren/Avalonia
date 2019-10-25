@@ -55,10 +55,10 @@
                 <AutoCompleteBox IsEnabled="{Binding !IsReadOnly}" Classes="editor" Margin="1"
                                     DataValidationErrors.Errors="{Binding ValueErrors}"
                                     IsTextCompletionEnabled="{Binding !IsReadOnly}"
-                                    AsyncPopulator="{Binding PossibleValuesPopulator}"
+                                    AsyncPopulator="{Binding HintValuesPopulator}"
                                   >
                   <v:BindingHelper.BindBackOnEvent>
-                    <v:BindingHelper Binding="{Binding Value, Mode=TwoWay}"  EventNames="LostFocus,DropDownClosed" PropertyName="Text" />
+                    <v:BindingHelper Binding="{Binding Value, Mode=TwoWay}"  EventNames="LostFocus,DropDownClosed,SelectionChanged,EnterKeyUp" PropertyName="Text" />
                   </v:BindingHelper.BindBackOnEvent>
                 </AutoCompleteBox>
               </Panel>
