@@ -9,6 +9,58 @@
   <StackPanel>
     <TextBlock Classes="h1">TextBlock</TextBlock>
     <TextBlock Classes="h2">A control that can display text</TextBlock>
+    <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20" Padding="2">
+      <StackPanel Orientation="Horizontal" TextBlock.FontSize="24" >
+        <TextBlock Text="Auto Height (Centered): " />
+        <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Center">
+          <TextBlock Text="L" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock Text=" Restricted Height: " />
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextBlock Text="L" VerticalAlignment="Center"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextBlock Text="L" VerticalAlignment="Top"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextBlock Text="L" VerticalAlignment="Bottom"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextBlock Text="L" VerticalAlignment="Stretch"/>
+        </Border>
+      </StackPanel>
+    </Border>
+    <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20" Padding="2">
+      <StackPanel Orientation="Horizontal" TextBlock.FontSize="24" >
+        <TextBlock Text="TextPresenter Auto Height (Centered): " />
+        <Border BorderThickness="1" BorderBrush="Black" VerticalAlignment="Center">
+          <TextPresenter Text="L" VerticalAlignment="Center" />
+        </Border>
+        <TextBlock Text=" Restricted Height: " />
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextPresenter Text="L" VerticalAlignment="Center"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextPresenter Text="L" VerticalAlignment="Top"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextPresenter Text="L" VerticalAlignment="Bottom"/>
+        </Border>
+        <Border BorderThickness="1" BorderBrush="Green" VerticalAlignment="Center" Height="22">
+          <TextPresenter Text="L" VerticalAlignment="Stretch"/>
+        </Border>
+      </StackPanel>
+    </Border>
+    <StackPanel Orientation="Horizontal" TextBlock.FontSize="30">
+      <TextBlock Text="TextBlock:" />
+      <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" Padding="0">
+        <TextBlock Text="✏" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Text="TextPresenter:" />
+      <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" Padding="0">
+        <TextPresenter FontFamily="Segoe UI Emoji" Text="✏" VerticalAlignment="Center"/>
+      </Border>
+    </StackPanel>
     <StackPanel
       Orientation="Horizontal"
       Spacing="16"
