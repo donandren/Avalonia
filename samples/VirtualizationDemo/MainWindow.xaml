@@ -9,6 +9,9 @@
                     Margin="16 0 0 0" 
                     MinWidth="150"
                     Spacing="4">
+          <Button x:Name="btnCbo" Content="Reset Combo Items" />
+          <ComboBox x:Name="cbo" />
+          <Border Height ="100" />
             <ComboBox Items="{Binding VirtualizationModes}"
                       SelectedItem="{Binding VirtualizationMode}"/>
             <ComboBox Items="{Binding Orientations}"
