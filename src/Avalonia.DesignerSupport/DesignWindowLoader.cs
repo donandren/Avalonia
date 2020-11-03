@@ -71,6 +71,8 @@ namespace Avalonia.DesignerSupport
 
                 Design.ApplyDesignModeProperties(window, control);
 
+                DesignStyles.Apply(window);
+
                 if (!window.IsSet(Window.SizeToContentProperty))
                 {
                     if (double.IsNaN(window.Width))

@@ -27,6 +27,15 @@
     <ProjectReference Include="..\Avalonia.Styling\Avalonia.Styling.csproj" />
     <ProjectReference Include="..\Avalonia.Themes.Default\Avalonia.Themes.Default.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="**\*.xaml.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
+    <AvaloniaResource Include="**\*.xaml">
+      <SubType>Designer</SubType>
+    </AvaloniaResource>
+  </ItemGroup>
   <Import Project="..\..\build\Rx.props" />
   <Import Project="..\..\build\ApiDiff.props" />
+  <Import Project="..\..\build\BuildTargets.targets" />
 </Project>

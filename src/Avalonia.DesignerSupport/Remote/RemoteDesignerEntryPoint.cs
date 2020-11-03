@@ -200,6 +200,8 @@ namespace Avalonia.DesignerSupport.Remote
         }
 
         private static Window s_currentWindow;
+        private static double? s_currentScale;
+
         private static void OnTransportMessage(IAvaloniaRemoteTransportConnection transport, object obj) => Dispatcher.UIThread.Post(() =>
         {
             if (obj is ClientSupportedPixelFormatsMessage formats)
@@ -231,7 +233,11 @@ namespace Avalonia.DesignerSupport.Remote
                 try
                 {
                     s_currentWindow = DesignWindowLoader.LoadDesignerWindow(xaml.Xaml, xaml.AssemblyPath, xaml.XamlFileProjectPath);
-                    s_transport.Send(new UpdateXamlResultMessage(){Handle = s_currentWindow.PlatformImpl?.Handle?.Handle.ToString()});
+                    if (s_currentScale != null)
+                    {
+                        DesignStyles.SetScale(s_currentWindow, s_currentScale.Value);
+                    }
+                    s_transport.Send(new UpdateXamlResultMessage() { Handle = s_currentWindow.PlatformImpl?.Handle?.Handle.ToString() });
                 }
                 catch (Exception e)
                 {
@@ -241,6 +247,11 @@ namespace Avalonia.DesignerSupport.Remote
                         Exception = new ExceptionDetails(e),
                     });
                 }
+            }
+            if (obj is SetDesignScaleMessage scale)
+            {
+                s_currentScale = scale.Scale;
+                DesignStyles.SetScale(s_currentWindow, s_currentScale.Value);
             }
         });
     }

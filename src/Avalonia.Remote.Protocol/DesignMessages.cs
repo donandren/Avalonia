@@ -21,6 +21,12 @@ namespace Avalonia.Remote.Protocol.Designer
         public ExceptionDetails Exception { get; set; }
     }
 
+    [AvaloniaRemoteMessageGuid("A98D13CB-9503-40A3-9D62-CB0EE3F4F583")]
+    public class SetDesignScaleMessage
+    {
+        public double Scale { get; set; }
+    }
+
     [AvaloniaRemoteMessageGuid("854887CF-2694-4EB6-B499-7461B6FB96C7")]
     public class StartDesignerSessionMessage
     {
