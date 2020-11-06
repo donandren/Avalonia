@@ -53,6 +53,9 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings
                     case IStronglyTypedStreamElement stream:
                         node = new StreamNode(stream.CreatePlugin());
                         break;
+                    case ITypeCastElement typeCast:
+                        node = new StrongTypeCastNode(typeCast.Type, typeCast.Cast);
+                        break;
                     default:
                         throw new InvalidOperationException($"Unknown binding path element type {element.GetType().FullName}");
                 }
@@ -126,6 +129,12 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings
             return this;
         }
 
+        public CompiledBindingPathBuilder TypeCast<T>()
+        {
+            _elements.Add(new TypeCastPathElement<T>());
+            return this;
+        }
+
         public CompiledBindingPathBuilder SetRawSource(object rawSource)
         {
             _rawSource = rawSource;
@@ -162,6 +171,13 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings
     internal interface IStronglyTypedStreamElement : ICompiledBindingPathElement
     {
         IStreamPlugin CreatePlugin();
+    }
+
+    internal interface ITypeCastElement : ICompiledBindingPathElement
+    {
+        Type Type { get; }
+
+        object Cast(object obj);
     }
 
     internal class TaskStreamPathElement<T> : IStronglyTypedStreamElement
@@ -229,5 +245,19 @@ namespace Avalonia.Markup.Xaml.MarkupExtensions.CompiledBindings
 
         public int[] Indices { get; }
         public Type ElementType { get; }
+    }
+
+    internal class TypeCastPathElement<T> : ITypeCastElement
+    {
+        public static readonly TypeCastPathElement<T> Instance = new TypeCastPathElement<T>();
+
+        public Type Type => typeof(T);
+
+        public object Cast(object obj)
+        {
+            if (obj is T result)
+                return result;
+            return null;
+        }
     }
 }

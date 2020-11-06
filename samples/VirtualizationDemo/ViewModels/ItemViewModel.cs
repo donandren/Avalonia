@@ -3,7 +3,7 @@ using ReactiveUI;
 
 namespace VirtualizationDemo.ViewModels
 {
-    internal class ItemViewModel : ReactiveObject
+    public class ItemViewModel : ReactiveObject
     {
         private string _prefix;
         private int _index;

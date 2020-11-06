@@ -11,7 +11,7 @@ using Avalonia.Controls.Selection;
 
 namespace VirtualizationDemo.ViewModels
 {
-    internal class MainWindowViewModel : ReactiveObject
+    public class MainWindowViewModel : ReactiveObject
     {
         private int _itemCount = 200;
         private string _newItemString = "New Item";

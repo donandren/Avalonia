@@ -198,20 +198,7 @@ namespace Avalonia.Markup.Xaml.XamlIl.CompilerExtensions
                     case BindingExpressionGrammar.AncestorNode ancestor:
                         if (ancestor.Namespace is null && ancestor.TypeName is null)
                         {
-                            var styledElementType = context.GetAvaloniaTypes().StyledElement;
-                            var ancestorType = context
-                                .ParentNodes()
-                                .OfType<XamlAstConstructableObjectNode>()
-                                .Where(x => styledElementType.IsAssignableFrom(x.Type.GetClrType()))
-                                .ElementAtOrDefault(ancestor.Level)
-                                ?.Type.GetClrType();
-
-                            if (ancestorType is null)
-                            {
-                                throw new XamlX.XamlParseException("Unable to resolve implicit ancestor type based on XAML tree.", lineInfo);
-                            }
-
-                            nodes.Add(new FindAncestorPathElementNode(ancestorType, ancestor.Level));
+                            nodes.Add(new FindAncestorPathElementNode(context.GetAvaloniaTypes().StyledElement, ancestor.Level));
                         }
                         else
                         {
@@ -241,6 +228,16 @@ namespace Avalonia.Markup.Xaml.XamlIl.CompilerExtensions
                         break;
                     case RawSourceBindingExpressionNode rawSource:
                         nodes.Add(new RawSourcePathElementNode(rawSource.RawSource));
+                        break;
+                    case BindingExpressionGrammar.TypeCastNode typeCastNode:
+                        var castType = GetType(typeCastNode.Namespace, typeCastNode.TypeName);
+
+                        if (castType is null)
+                        {
+                            throw new XamlX.XamlParseException($"Unable to resolve cast to type {typeCastNode.Namespace}:{typeCastNode.TypeName} based on XAML tree.", lineInfo);
+                        }
+
+                        nodes.Add(new TypeCastPathElementNode(castType));
                         break;
                 }
             }
@@ -422,7 +419,7 @@ namespace Avalonia.Markup.Xaml.XamlIl.CompilerExtensions
             {
                 codeGen.Ldtype(Type)
                     .Ldc_I4(_level)
-                    .EmitCall(context.GetAvaloniaTypes().CompiledBindingPathBuilder.FindMethod(m => m.Name == "FindAncestor"));
+                    .EmitCall(context.GetAvaloniaTypes().CompiledBindingPathBuilder.FindMethod(m => m.Name == "Ancestor"));
             }
         }
 
@@ -622,6 +619,21 @@ namespace Avalonia.Markup.Xaml.XamlIl.CompilerExtensions
                 codeGen
                     .EmitCall(context.GetAvaloniaTypes()
                     .CompiledBindingPathBuilder.FindMethod(m => m.Name == "SetRawSource"));
+            }
+        }
+
+        class TypeCastPathElementNode : IXamlIlBindingPathElementNode
+        {
+            public TypeCastPathElementNode(IXamlType ancestorType)
+            {
+                Type = ancestorType;
+            }
+
+            public IXamlType Type { get; }
+
+            public void Emit(XamlIlEmitContext context, IXamlILEmitter codeGen)
+            {
+                codeGen.EmitCall(context.GetAvaloniaTypes().CompiledBindingPathBuilder.FindMethod(m => m.Name == "TypeCast").MakeGenericMethod(new[] { Type }));
             }
         }
 

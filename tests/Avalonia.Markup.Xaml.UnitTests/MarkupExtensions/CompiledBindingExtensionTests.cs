@@ -8,7 +8,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Data.Core;
 using Avalonia.Markup.Data;
+using Avalonia.Markup.Parsers;
 using Avalonia.UnitTests;
+using Avalonia.Utilities;
 using XamlX;
 using Xunit;
 
@@ -39,6 +41,67 @@ namespace Avalonia.Markup.Xaml.UnitTests.MarkupExtensions
                 window.DataContext = dataContext;
 
                 Assert.Equal(dataContext.StringProperty, textBlock.Text);
+            }
+        }
+
+        [Fact]
+        public void ResolvesClrPropertyBasedOnDataContextType1()
+        {
+            /*
+            var cr = new CharacterReader(@"$parent.DataContext(local:TestDataContext).StringProperty".AsSpan());
+            var result = BindingExpressionGrammar.Parse(ref cr);
+
+            var cr1 = new CharacterReader(@"$parent.DataContext(local:TestDataContext.StringProperty)".AsSpan());
+            var result1 = BindingExpressionGrammar.Parse(ref cr1);
+
+            var cr2 = new CharacterReader(@"(local:TestDataContext.StringProperty)".AsSpan());
+            var result2 = BindingExpressionGrammar.Parse(ref cr2);
+            */
+            using (UnitTestApplication.Start(TestServices.StyledWindow))
+            {
+                var xaml = @"
+<Window xmlns='https://github.com/avaloniaui'
+        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+        xmlns:local='clr-namespace:Avalonia.Markup.Xaml.UnitTests.MarkupExtensions;assembly=Avalonia.Markup.Xaml.UnitTests'
+        x:DataType='local:TestDataContext'>
+    <TextBlock Tag='{CompiledBinding $parent.DataContext(local:TestDataContext)}' Text='{CompiledBinding $parent.DataContext(local:TestDataContext.StringProperty)}' Name='textBlock' />
+</Window>";
+                try
+                {
+                    var window = (Window)AvaloniaRuntimeXamlLoader.Load(xaml);
+                    var textBlock = window.FindControl<TextBlock>("textBlock");
+
+                    var dataContext = new TestDataContext
+                    {
+                        StringProperty = "foobar"
+                    };
+                    
+
+                    window.DataContext = dataContext;
+
+                    Assert.Equal(dataContext.StringProperty, textBlock.Text);
+                    Assert.Equal(dataContext, textBlock.Tag);
+
+                    window.DataContext = null;
+                    Assert.Equal(null, textBlock.Text);
+                    Assert.Equal(null, textBlock.Tag);
+
+                    window.DataContext = "foo";
+                    Assert.Equal(null, textBlock.Text);
+                    Assert.Equal(null, textBlock.Tag);
+
+                    window.DataContext = (int)1;
+                    Assert.Equal(null, textBlock.Text);
+                    Assert.Equal(null, textBlock.Tag);
+
+                    window.DataContext = dataContext;
+                    Assert.Equal(dataContext.StringProperty, textBlock.Text);
+                    Assert.Equal(dataContext, textBlock.Tag);
+                }
+                catch(Exception e)
+                {
+
+                }
             }
         }
 

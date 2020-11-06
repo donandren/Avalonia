@@ -1,7 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="VirtualizationDemo.MainWindow"
+        xmlns:l="clr-namespace:VirtualizationDemo.ViewModels;assembly=VirtualizationDemo"
         Title="AvaloniaUI Virtualization Test"
+        x:DataType="l:MainWindowViewModel"
         Width="800"
         Height="600">
     <DockPanel LastChildFill="True" Margin="16">
@@ -9,6 +11,8 @@
                     Margin="16 0 0 0" 
                     MinWidth="150"
                     Spacing="4">
+            <TextBlock Text="{CompiledBinding VirtualizationMode, StringFormat='c:{0}'}" />
+          <TextBlock Text="{CompiledBinding $parent.DataContext(l:MainWindowViewModel).VirtualizationMode, StringFormat='cast:{0}'}, TargetNullValue=?null, FallbackValue=?fb" />
             <ComboBox Items="{Binding VirtualizationModes}"
                       SelectedItem="{Binding VirtualizationMode}"/>
             <ComboBox Items="{Binding Orientations}"
