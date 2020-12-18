@@ -3,7 +3,6 @@ using System.Runtime.Versioning;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.ReactiveUI;
 using Avalonia.Rendering;
 
 namespace RenderDemo
@@ -36,7 +35,6 @@ namespace RenderDemo
                })
                 .UsePlatformDetect()
                 .Use60FpsRendererHackForDotnetFramework47plus()
-                .UseReactiveUI()
                 .LogToTrace();
     }
 

@@ -65,7 +65,7 @@ public partial class Build
         public AbsolutePath ZipTargetControlCatalogDesktopDir { get; }
 
 
-       public BuildParameters(Build b)
+        public BuildParameters(Build b)
         {
             // ARGUMENTS
             Configuration = b.Configuration ?? "Release";
